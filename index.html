@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kvngmaker Atlas</title>
+  <style>
+    :root {
+      --bg: #f5f5f2;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-border: rgba(0, 0, 0, 0.16);
+      --text: #0b0b0b;
+      --muted: #5f5f5f;
+      --accent: #0b0b0b;
+      --accent-2: #0b0b0b;
+      --danger: #0b0b0b;
+      --gold: #0b0b0b;
+      --grid: rgba(0, 0, 0, 0.05);
+      --node-core: #ffffff;
+      --node-core-stroke: rgba(0, 0, 0, 0.76);
+      --node-label: #0b0b0b;
+      --node-label-bg: rgba(255, 255, 255, 0.98);
+      --node-label-stroke: rgba(0, 0, 0, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(0, 0, 0, 0.035), transparent 20%),
+        linear-gradient(180deg, #ffffff 0%, #f1f1ee 100%);
+      font-family: "Segoe UI Variable", "Bahnschrift", "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    .gate {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(245, 245, 242, 0.96);
+      z-index: 8;
+      padding: 20px;
+    }
+
+    .gate-card {
+      width: min(96vw, 560px);
+      border: 1px solid var(--panel-border);
+      border-radius: 0;
+      background: var(--panel);
+      padding: 22px;
+      box-shadow: 14px 14px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .gate h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    .gate p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    .gate .row {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .gate input[type="file"],
+    .gate input[type="password"] {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 0;
+      border: 1px solid rgba(0, 0, 0, 0.22);
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    .gate button {
+      border: 1px solid #0b0b0b;
+      background: #0b0b0b;
+      color: #ffffff;
+      border-radius: 0;
+      padding: 11px 18px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 140ms ease, background 140ms ease;
+    }
+
+    .gate button:hover { transform: translateY(-1px); background: #222222; }
+
+    .gate small { color: var(--muted); display: block; margin-top: 8px; }
+    .err { color: var(--danger); min-height: 20px; margin-top: 8px; }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: 100vh;
+      opacity: 0;
+      transform: translateY(10px) scale(0.992);
+      transition: opacity 280ms ease, transform 280ms ease;
+      pointer-events: none;
+    }
+
+    .shell.live {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 24px 22px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(249, 249, 247, 0.94));
+      border-right: 2px solid rgba(0, 0, 0, 0.78);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      overflow: auto;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+      white-space: nowrap;
+    }
+
+    .eyebrow { margin: 0 0 8px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text); font-size: 11px; }
+    h1, h2 { margin: 0; }
+    .sidebar h1 { font-size: 34px; line-height: 1.02; max-width: 240px; }
+    .sidebar h2 { font-size: 11px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.18em; }
+    .lede, .muted { color: var(--muted); }
+
+    .dossier-head {
+      padding-bottom: 18px;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.78);
+    }
+
+    .dossier-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 18px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .dossier-meta strong {
+      display: block;
+      color: var(--text);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      margin-top: 3px;
+    }
+
+    .panel {
+      padding: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.76);
+      border-radius: 0;
+      background: var(--panel);
+      box-shadow: none;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.16);
+    }
+
+    .panel-index {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .search-box {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 0;
+      font: inherit;
+    }
+
+    .search-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .filter-chip {
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 0;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+    }
+
+    .filter-chip:hover, .filter-chip.active {
+      transform: translateY(-1px);
+      background: #0b0b0b;
+      color: #ffffff;
+      border-color: #0b0b0b;
+    }
+
+    .canvas-wrap { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+
+    .graph-shell {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      margin-right: 8px;
+    }
+
+    .stat-value { color: var(--text); font-weight: 600; }
+
+    .view-button {
+      border: 1px solid #0b0b0b;
+      background: #ffffff;
+      color: #0b0b0b;
+      border-radius: 0;
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .view-button:hover {
+      background: #0b0b0b;
+      color: #ffffff;
+    }
+
+    .view-button.active {
+      background: #0b0b0b;
+      color: #ffffff;
+    }
+
+    .graph-hint {
+      position: absolute;
+      right: 18px;
+      bottom: 114px;
+      padding: 8px 10px;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .minimap {
+      position: absolute;
+      right: 18px;
+      bottom: 14px;
+      width: 220px;
+      height: 92px;
+      border: 1px solid rgba(0, 0, 0, 0.34);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 242, 0.94));
+      box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.06);
+      pointer-events: none;
+    }
+
+    .mini-edge {
+      fill: none;
+      stroke: rgba(0, 0, 0, 0.18);
+      stroke-width: 4;
+    }
+
+    .mini-node {
+      fill: #0b0b0b;
+    }
+
+    .mini-viewport {
+      fill: transparent;
+      stroke: #0b0b0b;
+      stroke-width: 6;
+      stroke-dasharray: 16 10;
+    }
+
+    #graph {
+      width: 100%;
+      height: calc(100vh - 69px);
+      display: block;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #graph.is-panning { cursor: grabbing; }
+
+    .edge {
+      fill: none;
+      stroke: rgba(0, 0, 0, 0.28);
+      stroke-width: 1;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      filter: none;
+      stroke-dasharray: 10 6;
+      transition: stroke 200ms ease, opacity 200ms ease, stroke-width 200ms ease;
+    }
+
+    .edge-label-bg {
+      fill: rgba(255, 255, 255, 0.96);
+      stroke: rgba(0, 0, 0, 0.22);
+      stroke-width: 0.8;
+      pointer-events: none;
+    }
+
+    .edge-label {
+      fill: #0b0b0b;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+
+    .node {
+      cursor: pointer;
+      transition: opacity 200ms ease;
+    }
+
+    .node.is-dragging {
+      cursor: grabbing;
+    }
+
+    .node-shadow {
+      fill: rgba(0, 0, 0, 0.06);
+      pointer-events: none;
+    }
+
+    .node-halo {
+      fill: transparent;
+      stroke-width: 1;
+      opacity: 0.14;
+    }
+
+    .node-frame {
+      fill: var(--node-core);
+      stroke: var(--node-core-stroke);
+      stroke-width: 1.1;
+      filter: none;
+    }
+
+    .node-accent {
+      fill: #0b0b0b;
+      pointer-events: none;
+    }
+
+    .node-meta {
+      fill: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .node-label-bg {
+      fill: var(--node-label-bg);
+      stroke: var(--node-label-stroke);
+      stroke-width: 0.9;
+      pointer-events: none;
+    }
+
+    .node-label {
+      fill: var(--node-label);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-anchor: start;
+      pointer-events: none;
+    }
+
+    .node.selected .node-halo { opacity: 0.88; }
+    .node.selected .node-frame { fill: #0b0b0b; stroke: #0b0b0b; }
+    .node.selected .node-label,
+    .node.selected .node-meta { fill: #ffffff; }
+    .node.selected .node-label-bg { fill: #0b0b0b; stroke: #0b0b0b; }
+    .node.selected .node-accent { fill: #ffffff; }
+
+    .node.systems .node-halo,
+    .legend-dot.systems { stroke: rgba(0, 0, 0, 0.72); background: #0b0b0b; }
+    .node.ai .node-halo,
+    .legend-dot.ai { stroke: rgba(0, 0, 0, 0.56); background: #444444; }
+    .node.security .node-halo,
+    .legend-dot.security { stroke: rgba(0, 0, 0, 0.82); background: #000000; }
+    .node.runtime .node-halo,
+    .legend-dot.runtime { stroke: rgba(0, 0, 0, 0.44); background: #737373; }
+
+    .legend-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--muted); }
+    .legend-dot { width: 9px; height: 9px; border-radius: 0; display: inline-block; }
+
+    .selection-title { font-size: 20px; margin-bottom: 6px; }
+    .selection-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+
+    .selection-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .selection-card {
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      padding: 10px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .selection-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      margin-top: 4px;
+    }
+
+    .selection-tag {
+      padding: 6px 10px;
+      border-radius: 0;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    pre.edge-list {
+      margin: 10px 0 0;
+      white-space: pre-wrap;
+      color: var(--muted);
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--panel-border); }
+      #graph { height: 72vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <h1>Atlas Bootstrap</h1>
+      <p>Provide the bootstrap artifact and token to initialize the graph runtime.</p>
+      <div class="row">
+        <label class="sr-only" for="artifact">Bootstrap artifact file</label>
+        <input id="artifact" type="file" accept="image/jpeg,image/jpg" />
+      </div>
+      <div class="row">
+        <label class="sr-only" for="token">Bootstrap token</label>
+        <input id="token" type="password" placeholder="bootstrap token" autocomplete="off" />
+      </div>
+      <button id="unlock">Initialize</button>
+      <div id="gate-error" class="err"></div>
+      <small>Artifact and token are verified locally in-browser.</small>
+    </div>
+  </div>
+
+  <div class="shell" id="shell">
+    <aside class="sidebar">
+      <div class="dossier-head">
+        <p class="eyebrow">Single File Atlas</p>
+        <h1>Kvngmaker Systems Graph</h1>
+        <p class="lede">A connected map of the projects, motifs, and engineering directions built across this journey.</p>
+        <div class="dossier-meta">
+          <div>Mode<strong>Atlas</strong></div>
+          <div>Surface<strong>Desktop</strong></div>
+          <div>Style<strong>Brutal</strong></div>
+          <div>Control<strong>Manual</strong></div>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header"><h2>Lens</h2><span class="panel-index">01</span></div>
+        <div id="filters" class="filters"></div>
+      </section>
+
+      <section class="panel" id="selection-panel">
+        <div class="panel-header"><h2>Selection</h2><span class="panel-index">02</span></div>
+        <p class="muted">Click a node to inspect its role, stack, and edges.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><h2>Signals</h2><span class="panel-index">03</span></div>
+        <div class="legend-row"><span class="legend-dot systems"></span> Systems / low-level</div>
+        <div class="legend-row"><span class="legend-dot ai"></span> AI / orchestration</div>
+        <div class="legend-row"><span class="legend-dot security"></span> Security / reversing</div>
+        <div class="legend-row"><span class="legend-dot runtime"></span> Runtime / visualization</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><h2>Locate</h2><span class="panel-index">04</span></div>
+        <div class="search-box">
+          <input id="node-search" class="search-input" type="text" list="node-search-list" placeholder="Find node" autocomplete="off" />
+          <button id="focus-node" class="view-button" type="button">Focus</button>
+        </div>
+        <datalist id="node-search-list"></datalist>
+        <div class="search-note">Jump to a node by name and center the view on it.</div>
+      </section>
+    </aside>
+
+    <main class="canvas-wrap">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div><span class="stat-label">Nodes</span><span id="node-count" class="stat-value">0</span></div>
+          <div><span class="stat-label">Edges</span><span id="edge-count" class="stat-value">0</span></div>
+          <div><span class="stat-label">Theme</span><span class="stat-value">Brutal / Systems / AI</span></div>
+        </div>
+        <div class="topbar-right">
+          <div><span class="stat-label">Scale</span><span id="scale-value" class="stat-value">100%</span></div>
+          <button id="reset-view" class="view-button" type="button">Reset View</button>
+          <button id="export-svg" class="view-button" type="button">Export SVG</button>
+          <button id="export-png" class="view-button" type="button">Export PNG</button>
+        </div>
+      </header>
+      <div class="graph-shell">
+        <svg id="graph" viewBox="0 0 1200 900" aria-label="Project graph visualization"></svg>
+        <div class="graph-hint">Drag to pan / Wheel to zoom</div>
+        <svg id="minimap" class="minimap" viewBox="0 0 1200 900" aria-hidden="true"></svg>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const graphManifest = {
+        nodes: [
+          { id: 'identity', label: 'Identity.asm', subtitle: 'origin signal', description: 'README identity motif: stealth, systems craft, and low-level fluency.', category: 'runtime', weight: 4, tags: ['origin', 'asm', 'persona'] },
+          { id: 'ghost', label: 'Ghost Inject', subtitle: 'rust / windows ffi', description: 'Unsafe FFI, process enumeration, remote memory allocation, and thread launch patterns.', category: 'systems', weight: 6, tags: ['rust', 'ffi', 'windows'] },
+          { id: 'asm-key', label: 'Ghost ASM', subtitle: 'image / key gate', description: 'Hidden trigger design, decode keys, and source-level invisibility tricks.', category: 'security', weight: 5, tags: ['asm', 'obfuscation', 'unlock'] },
+          { id: 'go-merkle', label: 'MerkleForge', subtitle: 'go / concurrency', description: 'Parallel hashing, Merkle roots, proof generation, and verification workflows.', category: 'systems', weight: 5, tags: ['go', 'hashing', 'proofs'] },
+          { id: 'python-heist', label: 'Neon Heist Lab', subtitle: 'numpy / pandas / torch', description: 'Synthetic mission simulation, analytics dashboards, and model-driven what-if studies.', category: 'ai', weight: 6, tags: ['python', 'ml', 'simulation'] },
+          { id: 'java-heist', label: 'HeistChessSim', subtitle: 'java / monte carlo', description: 'Chess-like move systems, pathfinding, danger fields, and heist plan ranking.', category: 'systems', weight: 5, tags: ['java', 'pathfinding', 'simulation'] },
+          { id: 'blacksite', label: 'Blacksite Recon', subtitle: 'linux / hardening', description: 'Host hardening posture, service surface inspection, privilege hygiene, and triage signals.', category: 'security', weight: 6, tags: ['linux', 'hardening', 'ops'] },
+          { id: 'netops', label: 'NetOps Cartographer', subtitle: 'async recon graph', description: 'Async scanning, fingerprinting, TLS intel, ASN enrichment, and graph export.', category: 'security', weight: 7, tags: ['networking', 'tls', 'graph'] },
+          { id: 'reverse', label: 'Reverse Lab VM', subtitle: 'crackme / vm', description: 'Encrypted bytecode, runtime decode windows, opaque predicates, integrity gates, and decoys.', category: 'security', weight: 7, tags: ['reversing', 'vm', 'anti-debug'] },
+          { id: 'llm', label: 'LLM Ops Lab', subtitle: 'rag / safety / repair', description: 'Local retrieval, groundedness checks, multi-agent flow, code-aware repair, and patch proposals.', category: 'ai', weight: 7, tags: ['llm', 'rag', 'code-fix'] },
+          { id: 'atlas', label: 'Single-File Atlas', subtitle: 'html / graph', description: 'This file: one-page visualization stitching the portfolio constellation into a live map.', category: 'runtime', weight: 8, tags: ['html', 'graph', 'single-file'] }
+        ],
+        edges: [
+          { source: 'identity', target: 'ghost', label: 'low-level lineage' },
+          { source: 'identity', target: 'asm-key', label: 'concealment motif' },
+          { source: 'ghost', target: 'reverse', label: 'process internals' },
+          { source: 'asm-key', target: 'reverse', label: 'obfuscation' },
+          { source: 'go-merkle', target: 'netops', label: 'graph + proofs' },
+          { source: 'python-heist', target: 'java-heist', label: 'simulation design' },
+          { source: 'blacksite', target: 'netops', label: 'defensive telemetry' },
+          { source: 'reverse', target: 'llm', label: 'analysis pipelines' },
+          { source: 'netops', target: 'llm', label: 'retrieval + reporting' },
+          { source: 'python-heist', target: 'llm', label: 'modeling' },
+          { source: 'ghost', target: 'atlas', label: 'systems branch' },
+          { source: 'go-merkle', target: 'atlas', label: 'integrity branch' },
+          { source: 'python-heist', target: 'atlas', label: 'ml branch' },
+          { source: 'java-heist', target: 'atlas', label: 'simulation branch' },
+          { source: 'blacksite', target: 'atlas', label: 'linux branch' },
+          { source: 'netops', target: 'atlas', label: 'network branch' },
+          { source: 'reverse', target: 'atlas', label: 'reversing branch' },
+          { source: 'llm', target: 'atlas', label: 'ai branch' }
+        ]
+      }
+
+      const svg = document.getElementById('graph')
+      const filtersEl = document.getElementById('filters')
+      const selectionPanel = document.getElementById('selection-panel')
+      const nodeCountEl = document.getElementById('node-count')
+      const edgeCountEl = document.getElementById('edge-count')
+      const scaleValueEl = document.getElementById('scale-value')
+      const resetViewBtn = document.getElementById('reset-view')
+      const exportSvgBtn = document.getElementById('export-svg')
+      const exportPngBtn = document.getElementById('export-png')
+      const nodeSearchEl = document.getElementById('node-search')
+      const nodeSearchListEl = document.getElementById('node-search-list')
+      const focusNodeBtn = document.getElementById('focus-node')
+      const minimapEl = document.getElementById('minimap')
+      const shell = document.getElementById('shell')
+      const LAYOUT_STORAGE_KEY = 'kvngmaker-atlas-layout-v1'
+
+      const state = {
+        nodes: graphManifest.nodes,
+        edges: graphManifest.edges,
+        activeLens: 'all',
+        selectedId: null,
+        hoveredNodeId: null,
+        hoveredEdgeKey: null,
+        view: {
+          scale: 1,
+          panX: 0,
+          panY: 0
+        },
+        manualPositions: Object.create(null)
+      }
+
+      const scene = {
+        nodes: [],
+        edges: [],
+        positionById: new Map(),
+        viewport: null,
+        edgeLayer: null,
+        nodeLayer: null,
+        miniViewport: null,
+        miniEdgeLayer: null,
+        miniNodeLayer: null,
+        frameId: 0,
+        startTime: 0,
+        controlsBound: false,
+        dragging: false,
+        nodeDraggingId: null,
+        cameraAnimationId: 0,
+        pointerId: null,
+        dragOriginX: 0,
+        dragOriginY: 0,
+        startPanX: 0,
+        startPanY: 0
+      }
+
+      const lenses = ['all', 'systems', 'security', 'ai', 'runtime']
+
+      function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
+
+      function createFilterChip(name) {
+        const button = document.createElement('button')
+        button.className = 'filter-chip'
+        button.textContent = name
+        button.classList.toggle('active', name === state.activeLens)
+        button.addEventListener('click', () => {
+          state.activeLens = name
+          for (const chip of filtersEl.children) chip.classList.toggle('active', chip.textContent === name)
+          render()
+        })
+        return button
+      }
+
+      function setupFilters() {
+        filtersEl.innerHTML = ''
+        for (const lens of lenses) filtersEl.appendChild(createFilterChip(lens))
+      }
+
+      function setupSearch() {
+        nodeSearchListEl.innerHTML = ''
+        for (const node of state.nodes) {
+          const option = document.createElement('option')
+          option.value = node.label
+          nodeSearchListEl.appendChild(option)
+        }
+      }
+
+      function saveLayout() {
+        try {
+          localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(state.manualPositions))
+        } catch {
+        }
+      }
+
+      function loadLayout() {
+        try {
+          const raw = localStorage.getItem(LAYOUT_STORAGE_KEY)
+          if (!raw) return
+          const parsed = JSON.parse(raw)
+          if (parsed && typeof parsed === 'object') {
+            state.manualPositions = parsed
+          }
+        } catch {
+          state.manualPositions = Object.create(null)
+        }
+      }
+
+      function filteredNodes() {
+        if (state.activeLens === 'all') return state.nodes
+        return state.nodes.filter(n => n.category === state.activeLens)
+      }
+
+      function filteredEdges(nodes) {
+        const allowed = new Set(nodes.map(n => n.id))
+        return state.edges.filter(e => allowed.has(e.source) && allowed.has(e.target))
+      }
+
+      function layout(nodes, edges) {
+        const byId = new Map(nodes.map(n => [n.id, { ...n }]))
+        const radius = Math.min(440, 120 + nodes.length * 18)
+        const cx = 600
+        const cy = 430
+
+        nodes.forEach((node, index) => {
+          const angle = (Math.PI * 2 * index) / Math.max(nodes.length, 1)
+          const placed = byId.get(node.id)
+          placed.x = cx + Math.cos(angle) * radius * (0.6 + (index % 3) * 0.1)
+          placed.y = cy + Math.sin(angle) * radius * (0.6 + (index % 4) * 0.08)
+          placed.vx = 0
+          placed.vy = 0
+        })
+
+        for (let step = 0; step < 240; step++) {
+          for (const a of byId.values()) {
+            for (const b of byId.values()) {
+              if (a.id === b.id) continue
+              const dx = a.x - b.x
+              const dy = a.y - b.y
+              const distSq = Math.max(24, dx * dx + dy * dy)
+              const force = 6800 / distSq
+              const d = Math.sqrt(distSq)
+              a.vx += (dx / d) * force
+              a.vy += (dy / d) * force
+            }
+          }
+
+          for (const edge of edges) {
+            const a = byId.get(edge.source)
+            const b = byId.get(edge.target)
+            if (!a || !b) continue
+            const dx = b.x - a.x
+            const dy = b.y - a.y
+            const dist = Math.max(1, Math.hypot(dx, dy))
+            const spring = (dist - 150) * 0.0045
+            const fx = (dx / dist) * spring
+            const fy = (dy / dist) * spring
+            a.vx += fx
+            a.vy += fy
+            b.vx -= fx
+            b.vy -= fy
+          }
+
+          for (const n of byId.values()) {
+            n.vx *= 0.78
+            n.vy *= 0.78
+            n.x = clamp(n.x + n.vx, 90, 1110)
+            n.y = clamp(n.y + n.vy, 80, 820)
+          }
+        }
+
+        for (const node of nodes) {
+          const placed = byId.get(node.id)
+          const manual = state.manualPositions[node.id]
+          if (placed && manual) {
+            placed.x = manual.x
+            placed.y = manual.y
+          }
+        }
+
+        return byId
+      }
+
+      function edgeListFor(nodeId) {
+        return state.edges
+          .filter(e => e.source === nodeId || e.target === nodeId)
+          .map(e => `${e.source === nodeId ? '->' : '<-'} ${e.label} ${e.source === nodeId ? e.target : e.source}`)
+      }
+
+      function renderSelection(node) {
+        if (!node) {
+          selectionPanel.innerHTML = '<div class="panel-header"><h2>Selection</h2><span class="panel-index">02</span></div><p class="muted">Click a node to inspect its role, stack, and edges.</p>'
+          return
+        }
+        const edges = edgeListFor(node.id)
+        selectionPanel.innerHTML = `
+          <div class="panel-header"><h2>Selection</h2><span class="panel-index">02</span></div>
+          <div class="selection-title">${node.label}</div>
+          <div class="muted">${node.subtitle}</div>
+          <div class="selection-grid">
+            <div class="selection-card">Category<strong>${node.category}</strong></div>
+            <div class="selection-card">Weight<strong>${node.weight}</strong></div>
+          </div>
+          <div class="selection-tags">${node.tags.map(t => `<span class="selection-tag">${t}</span>`).join('')}</div>
+          <p class="muted">${node.description}</p>
+          <pre class="edge-list">${edges.join('\n') || 'No visible edges'}</pre>
+        `
+      }
+
+      function updateMinimap() {
+        if (!scene.miniViewport) return
+        const visibleWidth = 1200 / state.view.scale
+        const visibleHeight = 900 / state.view.scale
+        const x = clamp(-state.view.panX / state.view.scale, 0, 1200 - visibleWidth)
+        const y = clamp(-state.view.panY / state.view.scale, 0, 900 - visibleHeight)
+        scene.miniViewport.setAttribute('x', x)
+        scene.miniViewport.setAttribute('y', y)
+        scene.miniViewport.setAttribute('width', visibleWidth)
+        scene.miniViewport.setAttribute('height', visibleHeight)
+      }
+
+      function stopCameraAnimation() {
+        if (scene.cameraAnimationId) {
+          cancelAnimationFrame(scene.cameraAnimationId)
+          scene.cameraAnimationId = 0
+        }
+      }
+
+      function animateViewTo(nextScale, nextPanX, nextPanY, duration = 280) {
+        stopCameraAnimation()
+        const startScale = state.view.scale
+        const startPanX = state.view.panX
+        const startPanY = state.view.panY
+        const startTime = performance.now()
+        const ease = t => 1 - Math.pow(1 - t, 3)
+
+        const tick = now => {
+          const progress = Math.min(1, (now - startTime) / duration)
+          const eased = ease(progress)
+          state.view.scale = startScale + (nextScale - startScale) * eased
+          state.view.panX = startPanX + (nextPanX - startPanX) * eased
+          state.view.panY = startPanY + (nextPanY - startPanY) * eased
+          applyViewport()
+          if (progress < 1) {
+            scene.cameraAnimationId = requestAnimationFrame(tick)
+          } else {
+            scene.cameraAnimationId = 0
+          }
+        }
+
+        scene.cameraAnimationId = requestAnimationFrame(tick)
+      }
+
+      function applyViewport() {
+        if (!scene.viewport) return
+        scene.viewport.setAttribute('transform', `translate(${state.view.panX} ${state.view.panY}) scale(${state.view.scale})`)
+        scaleValueEl.textContent = `${Math.round(state.view.scale * 100)}%`
+        updateMinimap()
+      }
+
+      function ensureViewport() {
+        const viewport = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        const edgeLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        const nodeLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        viewport.append(edgeLayer, nodeLayer)
+        svg.appendChild(viewport)
+        scene.viewport = viewport
+        scene.edgeLayer = edgeLayer
+        scene.nodeLayer = nodeLayer
+
+        minimapEl.innerHTML = ''
+        const miniEdgeLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        const miniNodeLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        const miniViewport = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        miniViewport.setAttribute('class', 'mini-viewport')
+        minimapEl.append(miniEdgeLayer, miniNodeLayer, miniViewport)
+        scene.miniEdgeLayer = miniEdgeLayer
+        scene.miniNodeLayer = miniNodeLayer
+        scene.miniViewport = miniViewport
+        applyViewport()
+      }
+
+      function focusNodeByQuery(query) {
+        const normalized = (query || '').trim().toLowerCase()
+        if (!normalized) return
+        const node = state.nodes.find(item => item.label.toLowerCase() === normalized)
+          || state.nodes.find(item => item.id.toLowerCase() === normalized)
+          || state.nodes.find(item => item.label.toLowerCase().includes(normalized))
+        if (!node) return
+        state.activeLens = 'all'
+        for (const chip of filtersEl.children) {
+          chip.classList.toggle('active', chip.textContent === 'all')
+        }
+        state.selectedId = node.id
+        renderSelection(node)
+        render()
+        const position = scene.positionById.get(node.id)
+        if (!position) return
+        const nextScale = 1.28
+        const nextPanX = 600 - position.x * nextScale
+        const nextPanY = 450 - position.y * nextScale
+        animateViewTo(nextScale, nextPanX, nextPanY)
+      }
+
+      function clientToWorld(clientX, clientY) {
+        const rect = svg.getBoundingClientRect()
+        const svgX = ((clientX - rect.left) / rect.width) * 1200
+        const svgY = ((clientY - rect.top) / rect.height) * 900
+        return {
+          x: (svgX - state.view.panX) / state.view.scale,
+          y: (svgY - state.view.panY) / state.view.scale
+        }
+      }
+
+      function relatedToHovered(nodeId, edgeRef) {
+        if (!state.hoveredNodeId) return false
+        if (nodeId) {
+          if (nodeId === state.hoveredNodeId) return true
+          return state.edges.some(edge => (
+            (edge.source === state.hoveredNodeId && edge.target === nodeId)
+            || (edge.target === state.hoveredNodeId && edge.source === nodeId)
+          ))
+        }
+        return edgeRef.sourceId === state.hoveredNodeId || edgeRef.targetId === state.hoveredNodeId
+      }
+
+      function triggerDownload(filename, blob) {
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = filename
+        document.body.appendChild(anchor)
+        anchor.click()
+        anchor.remove()
+        URL.revokeObjectURL(url)
+      }
+
+      function exportSvg() {
+        const source = new XMLSerializer().serializeToString(svg)
+        const output = source.startsWith('<svg')
+          ? '<?xml version="1.0" encoding="UTF-8"?>' + source
+          : source
+        triggerDownload('atlas-view.svg', new Blob([output], { type: 'image/svg+xml;charset=utf-8' }))
+      }
+
+      function exportPng() {
+        const serialized = new XMLSerializer().serializeToString(svg)
+        const blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>' + serialized], { type: 'image/svg+xml;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const image = new Image()
+        image.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.max(1200, Math.round(svg.clientWidth || 1200))
+          canvas.height = Math.max(900, Math.round(svg.clientHeight || 900))
+          const ctx = canvas.getContext('2d')
+          ctx.fillStyle = '#f5f5f2'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+          canvas.toBlob(pngBlob => {
+            if (pngBlob) triggerDownload('atlas-view.png', pngBlob)
+            URL.revokeObjectURL(url)
+          }, 'image/png')
+        }
+        image.src = url
+      }
+
+      function bindGraphControls() {
+        if (scene.controlsBound) return
+        scene.controlsBound = true
+
+        svg.addEventListener('wheel', event => {
+          event.preventDefault()
+          const nextScale = clamp(state.view.scale * (event.deltaY < 0 ? 1.08 : 0.92), 0.55, 2.4)
+          const rect = svg.getBoundingClientRect()
+          const pointerX = event.clientX - rect.left
+          const pointerY = event.clientY - rect.top
+          const ratio = nextScale / state.view.scale
+          state.view.panX = pointerX - (pointerX - state.view.panX) * ratio
+          state.view.panY = pointerY - (pointerY - state.view.panY) * ratio
+          state.view.scale = nextScale
+          applyViewport()
+        }, { passive: false })
+
+        svg.addEventListener('pointerdown', event => {
+          if (scene.nodeDraggingId) return
+          if (event.button !== 0) return
+          scene.dragging = true
+          scene.pointerId = event.pointerId
+          scene.dragOriginX = event.clientX
+          scene.dragOriginY = event.clientY
+          scene.startPanX = state.view.panX
+          scene.startPanY = state.view.panY
+          svg.classList.add('is-panning')
+          svg.setPointerCapture(event.pointerId)
+        })
+
+        svg.addEventListener('pointermove', event => {
+          if (scene.nodeDraggingId && scene.pointerId === event.pointerId) {
+            const point = clientToWorld(event.clientX, event.clientY)
+            const dragged = scene.nodes.find(node => node.id === scene.nodeDraggingId)
+            if (dragged) {
+              dragged.baseX = clamp(point.x, 90, 1110)
+              dragged.baseY = clamp(point.y, 80, 820)
+              state.manualPositions[dragged.id] = { x: dragged.baseX, y: dragged.baseY }
+              saveLayout()
+              updateScene((performance.now() - scene.startTime) / 1000)
+            }
+            return
+          }
+          if (!scene.dragging || scene.pointerId !== event.pointerId) return
+          state.view.panX = scene.startPanX + (event.clientX - scene.dragOriginX)
+          state.view.panY = scene.startPanY + (event.clientY - scene.dragOriginY)
+          applyViewport()
+        })
+
+        const stopDrag = event => {
+          if (!scene.dragging && !scene.nodeDraggingId) return
+          if (event.pointerId !== undefined && scene.pointerId !== null && scene.pointerId !== event.pointerId) return
+          scene.dragging = false
+          if (scene.nodeDraggingId) {
+            const dragged = scene.nodes.find(node => node.id === scene.nodeDraggingId)
+            if (dragged) dragged.group.classList.remove('is-dragging')
+          }
+          scene.nodeDraggingId = null
+          scene.pointerId = null
+          svg.classList.remove('is-panning')
+        }
+
+        svg.addEventListener('pointerup', stopDrag)
+        svg.addEventListener('pointercancel', stopDrag)
+        resetViewBtn.addEventListener('click', () => {
+          animateViewTo(1, 0, 0)
+        })
+        focusNodeBtn.addEventListener('click', () => focusNodeByQuery(nodeSearchEl.value))
+        exportSvgBtn.addEventListener('click', exportSvg)
+        exportPngBtn.addEventListener('click', exportPng)
+        nodeSearchEl.addEventListener('keydown', event => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            focusNodeByQuery(nodeSearchEl.value)
+          }
+        })
+      }
+
+      function isConnectedToSelected(edge) {
+        if (!state.selectedId) return false
+        return edge.source === state.selectedId || edge.target === state.selectedId
+      }
+
+      function stopAnimation() {
+        if (scene.frameId) {
+          cancelAnimationFrame(scene.frameId)
+          scene.frameId = 0
+        }
+      }
+
+      function updateScene(timeSec) {
+        for (const nodeRef of scene.nodes) {
+          const driftX = Math.cos(timeSec * (0.24 + nodeRef.seed * 0.06) + nodeRef.phase) * nodeRef.ampX
+          const driftY = Math.sin(timeSec * (0.31 + nodeRef.seed * 0.055) + nodeRef.phase * 0.8) * nodeRef.ampY
+          const x = nodeRef.baseX + driftX
+          const y = nodeRef.baseY + driftY
+          const pulse = 1 + Math.sin(timeSec * 0.72 + nodeRef.phase) * 0.006
+          const width = nodeRef.width * pulse
+          const height = nodeRef.height
+          const left = x - width / 2
+          const top = y - height / 2
+
+          nodeRef.shadow.setAttribute('x', left + 5)
+          nodeRef.shadow.setAttribute('y', top + 5)
+          nodeRef.shadow.setAttribute('width', width)
+          nodeRef.shadow.setAttribute('height', height)
+
+          nodeRef.halo.setAttribute('x', left - 4)
+          nodeRef.halo.setAttribute('y', top - 4)
+          nodeRef.halo.setAttribute('width', width + 8)
+          nodeRef.halo.setAttribute('height', height + 8)
+
+          nodeRef.frame.setAttribute('x', left)
+          nodeRef.frame.setAttribute('y', top)
+          nodeRef.frame.setAttribute('width', width)
+          nodeRef.frame.setAttribute('height', height)
+
+          nodeRef.accent.setAttribute('x', left)
+          nodeRef.accent.setAttribute('y', top)
+          nodeRef.accent.setAttribute('width', 8)
+          nodeRef.accent.setAttribute('height', height)
+
+          nodeRef.meta.setAttribute('x', left + 18)
+          nodeRef.meta.setAttribute('y', top + 16)
+
+          nodeRef.label.setAttribute('x', left + 18)
+          nodeRef.label.setAttribute('y', top + 33)
+
+          nodeRef.labelBg.setAttribute('x', left + 12)
+          nodeRef.labelBg.setAttribute('y', top + height - 14)
+          nodeRef.labelBg.setAttribute('width', Math.max(34, width - 24))
+          nodeRef.labelBg.setAttribute('height', 2)
+
+          nodeRef.miniNode.setAttribute('x', left)
+          nodeRef.miniNode.setAttribute('y', top)
+          nodeRef.miniNode.setAttribute('width', width)
+          nodeRef.miniNode.setAttribute('height', height)
+          nodeRef.group.style.opacity = state.hoveredNodeId && !relatedToHovered(nodeRef.id) ? '0.34' : '1'
+
+          scene.positionById.set(nodeRef.id, {
+            x,
+            y,
+            left,
+            right: left + width,
+            top,
+            bottom: top + height,
+            width,
+            height
+          })
+        }
+
+        for (const edgeRef of scene.edges) {
+          const source = scene.positionById.get(edgeRef.sourceId)
+          const target = scene.positionById.get(edgeRef.targetId)
+          if (!source || !target) continue
+
+          const sourceRight = source.x <= target.x
+          const startX = sourceRight ? source.right : source.left
+          const startY = source.y
+          const endX = sourceRight ? target.left : target.right
+          const endY = target.y
+          const offset = 24 + edgeRef.track
+          const laneX = sourceRight
+            ? Math.min(endX - 18, startX + Math.max(offset, (endX - startX) * 0.5))
+            : Math.max(endX + 18, startX - Math.max(offset, (startX - endX) * 0.5))
+          const d = `M ${startX} ${startY} L ${laneX} ${startY} L ${laneX} ${endY} L ${endX} ${endY}`
+          edgeRef.line.setAttribute('d', d)
+          edgeRef.miniLine.setAttribute('d', d)
+
+          const active = isConnectedToSelected(edgeRef)
+          const hovered = relatedToHovered(null, edgeRef)
+          const shimmer = 0.16 + Math.sin(timeSec * 1.05 + edgeRef.phase) * 0.055
+          edgeRef.line.style.opacity = hovered ? '0.9' : active ? String(0.88 + shimmer * 0.2) : state.hoveredNodeId ? '0.14' : String(0.28 + shimmer)
+          edgeRef.line.style.strokeWidth = hovered ? '2.2' : active ? '1.6' : '1'
+          edgeRef.line.style.strokeDashoffset = String(timeSec * (active ? -12 : -6) + edgeRef.phase * 4)
+          edgeRef.line.style.stroke = hovered || active ? 'rgba(0, 0, 0, 0.92)' : 'rgba(0, 0, 0, 0.28)'
+          edgeRef.miniLine.style.opacity = hovered || active ? '0.5' : state.hoveredNodeId ? '0.08' : '0.18'
+
+          const showLabel = hovered || edgeRef.key === state.hoveredEdgeKey
+          const midX = (startX + laneX + laneX + endX) / 4
+          const midY = (startY + endY) / 2
+          edgeRef.labelBg.style.opacity = showLabel ? '1' : '0'
+          edgeRef.label.style.opacity = showLabel ? '1' : '0'
+          edgeRef.labelBg.setAttribute('x', midX - edgeRef.labelWidth / 2)
+          edgeRef.labelBg.setAttribute('y', midY - 11)
+          edgeRef.labelBg.setAttribute('width', edgeRef.labelWidth)
+          edgeRef.labelBg.setAttribute('height', 18)
+          edgeRef.label.setAttribute('x', midX)
+          edgeRef.label.setAttribute('y', midY + 3)
+        }
+
+        updateMinimap()
+      }
+
+      function startAnimation() {
+        stopAnimation()
+        scene.startTime = performance.now()
+        const tick = now => {
+          updateScene((now - scene.startTime) / 1000)
+          scene.frameId = requestAnimationFrame(tick)
+        }
+        scene.frameId = requestAnimationFrame(tick)
+      }
+
+      function render() {
+        const nodes = filteredNodes()
+        const edges = filteredEdges(nodes)
+        const map = layout(nodes, edges)
+        const laneUsage = new Map()
+        nodeCountEl.textContent = String(nodes.length)
+        edgeCountEl.textContent = String(edges.length)
+        svg.innerHTML = ''
+        ensureViewport()
+        scene.nodes = []
+        scene.edges = []
+        scene.positionById.clear()
+
+        edges.forEach((edge, index) => {
+          const source = map.get(edge.source)
+          const target = map.get(edge.target)
+          const sourceRight = source && target ? source.x <= target.x : true
+          const laneKey = `${edge.source}:${sourceRight ? 'r' : 'l'}`
+          const laneIndex = laneUsage.get(laneKey) || 0
+          laneUsage.set(laneKey, laneIndex + 1)
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+          line.setAttribute('class', 'edge')
+          const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          labelBg.setAttribute('class', 'edge-label-bg')
+          labelBg.style.opacity = '0'
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+          label.setAttribute('class', 'edge-label')
+          label.style.opacity = '0'
+          label.textContent = edge.label
+          const key = `${edge.source}:${edge.target}:${edge.label}`
+          line.addEventListener('pointerenter', () => {
+            state.hoveredEdgeKey = key
+          })
+          line.addEventListener('pointerleave', () => {
+            state.hoveredEdgeKey = null
+          })
+          scene.edgeLayer.appendChild(line)
+          scene.edgeLayer.append(labelBg, label)
+          const miniLine = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+          miniLine.setAttribute('class', 'mini-edge')
+          scene.miniEdgeLayer.appendChild(miniLine)
+          scene.edges.push({
+            sourceId: edge.source,
+            targetId: edge.target,
+            phase: Math.random() * Math.PI * 2,
+            track: laneIndex * 14,
+            line,
+            miniLine,
+            labelBg,
+            label,
+            labelWidth: Math.max(42, edge.label.length * 6.8 + 18),
+            key
+          })
+        })
+
+        nodes.forEach((node, index) => {
+          const p = map.get(node.id)
+          if (!p) return
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+          g.setAttribute('class', `node ${node.category || 'runtime'} ${state.selectedId === node.id ? 'selected' : ''}`)
+          g.addEventListener('pointerenter', () => {
+            state.hoveredNodeId = node.id
+          })
+          g.addEventListener('pointerleave', () => {
+            state.hoveredNodeId = null
+          })
+          g.addEventListener('pointerdown', event => {
+            event.stopPropagation()
+            scene.dragging = false
+            scene.nodeDraggingId = node.id
+            scene.pointerId = event.pointerId
+            const dragged = scene.nodes.find(item => item.id === node.id)
+            if (dragged) {
+              const point = clientToWorld(event.clientX, event.clientY)
+              dragged.baseX = point.x
+              dragged.baseY = point.y
+            }
+            g.classList.add('is-dragging')
+            svg.setPointerCapture(event.pointerId)
+          })
+          g.addEventListener('click', () => {
+            state.selectedId = node.id
+            renderSelection(node)
+            render()
+          })
+
+          const width = Math.max(132, Math.min(188, node.label.length * 8.6 + 42))
+          const height = 44
+
+          const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          shadow.setAttribute('class', 'node-shadow')
+
+          const halo = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          halo.setAttribute('class', 'node-halo')
+          halo.setAttribute('rx', '0')
+          halo.setAttribute('ry', '0')
+
+          const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          frame.setAttribute('class', 'node-frame')
+          frame.setAttribute('rx', '0')
+          frame.setAttribute('ry', '0')
+
+          const accent = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          accent.setAttribute('class', 'node-accent')
+
+          const meta = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+          meta.setAttribute('class', 'node-meta')
+          meta.textContent = node.subtitle
+
+          const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          labelBg.setAttribute('class', 'node-label-bg')
+          labelBg.setAttribute('rx', '0')
+          labelBg.setAttribute('ry', '0')
+
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+          label.setAttribute('class', 'node-label')
+          label.textContent = node.label
+
+          g.append(shadow, halo, frame, accent, meta, labelBg, label)
+          scene.nodeLayer.appendChild(g)
+
+          const miniNode = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+          miniNode.setAttribute('class', 'mini-node')
+          scene.miniNodeLayer.appendChild(miniNode)
+
+          scene.nodes.push({
+            id: node.id,
+            seed: (index % 7) + 1,
+            phase: (index * 0.67) % (Math.PI * 2),
+            ampX: 1.1 + (index % 4) * 0.55,
+            ampY: 0.8 + (index % 3) * 0.45,
+            baseX: p.x,
+            baseY: p.y,
+            width,
+            height,
+            shadow,
+            halo,
+            frame,
+            accent,
+            meta,
+            label,
+            labelBg,
+            miniNode,
+            group: g
+          })
+        })
+
+        updateScene(0)
+        startAnimation()
+      }
+
+      setupFilters()
+      loadLayout()
+      bindGraphControls()
+      setupSearch()
+      renderSelection(null)
+
+      const gate = document.getElementById('gate')
+      const inputArtifact = document.getElementById('artifact')
+      const inputToken = document.getElementById('token')
+      const gateError = document.getElementById('gate-error')
+      const btnUnlock = document.getElementById('unlock')
+
+      function _n() {
+        return [108, 108, 97, 109, 97, 46, 106, 112, 103].map(c => String.fromCharCode(c)).join('')
+      }
+
+      async function _k(bytes) {
+        const digest = await crypto.subtle.digest('SHA-256', bytes)
+        const arr = new Uint8Array(digest)
+        let out = ''
+        for (let i = 0; i < 12; i++) {
+          const mixed = arr[i] ^ ((i * 0x2d + 0x41) & 0xff)
+          out += mixed.toString(16).padStart(2, '0')
+        }
+        return out
+      }
+
+      async function unlock() {
+        gateError.textContent = ''
+        const file = inputArtifact.files && inputArtifact.files[0]
+        const token = (inputToken.value || '').trim().toLowerCase()
+
+        if (!file) {
+          gateError.textContent = 'Bootstrap artifact required.'
+          return
+        }
+        if ((file.name || '').toLowerCase() !== _n()) {
+          gateError.textContent = 'Artifact mismatch.'
+          return
+        }
+        if (!token) {
+          gateError.textContent = 'Bootstrap token required.'
+          return
+        }
+
+        const bytes = await file.arrayBuffer()
+        const expected = await _k(bytes)
+        if (token !== expected) {
+          gateError.textContent = 'Bootstrap validation failed.'
+          return
+        }
+
+        gate.style.display = 'none'
+        shell.classList.add('live')
+        render()
+      }
+
+      btnUnlock.addEventListener('click', () => unlock().catch(() => {
+        gateError.textContent = 'Bootstrap validation failed.'
+      }))
+    })()
+  </script>
+</body>
+</html>
