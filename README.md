@@ -17,7 +17,7 @@ _start:
 Stack
 
 rust c asm go python java linux networking reversing
-
+llm? yh...
 by the by
 ```
 
