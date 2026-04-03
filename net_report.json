@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "timestamp": "2026-04-03T03:58:28.537787Z",
+    "elapsed_seconds": 0.832,
+    "ports_scanned": [
+      22,
+      80,
+      443
+    ]
+  },
+  "hosts": [
+    {
+      "host": "127.0.0.1",
+      "score": 0,
+      "notes": [
+        "Low external attack surface observed"
+      ],
+      "reverse_dns": [],
+      "asn_number": null,
+      "asn_org": null,
+      "findings": [
+        {
+          "port": 22,
+          "state": "closed",
+          "latency_ms": 507.754,
+          "service_hint": "unknown",
+          "banner": null,
+          "tls": null
+        },
+        {
+          "port": 80,
+          "state": "closed",
+          "latency_ms": 507.667,
+          "service_hint": "unknown",
+          "banner": null,
+          "tls": null
+        },
+        {
+          "port": 443,
+          "state": "closed",
+          "latency_ms": 507.533,
+          "service_hint": "unknown",
+          "banner": null,
+          "tls": null
+        }
+      ]
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "host:127.0.0.1",
+        "type": "host",
+        "label": "127.0.0.1"
+      }
+    ],
+    "edges": []
+  }
+}

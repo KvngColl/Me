@@ -1,0 +1,6 @@
+digraph netops {
+  rankdir=LR;
+  graph [fontname=Helvetica];
+  node [shape=box style=rounded fontname=Helvetica];
+  "host:127.0.0.1" [label="127.0.0.1" fillcolor="#6baed6" style="filled,rounded"];
+}
