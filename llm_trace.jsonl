@@ -1,0 +1,16 @@
+{"ts": "2026-04-03T04:29:51.991130Z", "stage": "input", "payload": {"question": "How should RAG answers be validated?", "multi_agent": true, "top_k": 3}}
+{"ts": "2026-04-03T04:29:51.992130Z", "stage": "planner", "payload": {"core_terms": ["how", "should", "rag", "answers", "be", "validated"], "expanded_query": "how should rag answers be validated retrieval groundedness evidence"}}
+{"ts": "2026-04-03T04:29:51.993130Z", "stage": "retriever", "payload": {"query": "how should rag answers be validated retrieval groundedness evidence", "hits": [{"doc_id": "doc-4", "score": 7.6661}]}}
+{"ts": "2026-04-03T04:29:51.994132Z", "stage": "critic", "payload": {"unsupported_count": 1, "unsupported": ["[doc-4]"], "citations": ["doc-4"]}}
+{"ts": "2026-04-03T04:29:51.995130Z", "stage": "output", "payload": {"blocked": false, "citations": ["doc-4"], "latency_ms": 2.726}}
+{"ts": "2026-04-03T04:30:05.479006Z", "stage": "input", "payload": {"question": "How should RAG answers be validated?", "multi_agent": true, "top_k": 3}}
+{"ts": "2026-04-03T04:30:05.480007Z", "stage": "planner", "payload": {"core_terms": ["how", "should", "rag", "answers", "be", "validated"], "expanded_query": "how should rag answers be validated retrieval groundedness evidence"}}
+{"ts": "2026-04-03T04:30:05.480007Z", "stage": "retriever", "payload": {"query": "how should rag answers be validated retrieval groundedness evidence", "hits": [{"doc_id": "doc-4", "score": 7.6661}]}}
+{"ts": "2026-04-03T04:30:05.481005Z", "stage": "critic", "payload": {"unsupported_count": 1, "unsupported": ["[doc-4]"], "citations": ["doc-4"]}}
+{"ts": "2026-04-03T04:30:05.481005Z", "stage": "output", "payload": {"blocked": false, "citations": ["doc-4"], "latency_ms": 1.451}}
+{"ts": "2026-04-03T04:33:14.359306Z", "stage": "input", "payload": {"question": "How does ASLR help?", "multi_agent": true, "top_k": 3}}
+{"ts": "2026-04-03T04:33:14.361313Z", "stage": "planner", "payload": {"core_terms": ["how", "does", "aslr", "help"], "expanded_query": "how does aslr help randomization memory"}}
+{"ts": "2026-04-03T04:33:14.361313Z", "stage": "retriever", "payload": {"query": "how does aslr help randomization memory", "hits": [{"doc_id": "doc-1", "score": 3.4149}, {"doc_id": "doc-2", "score": 0.15}]}}
+{"ts": "2026-04-03T04:33:14.362313Z", "stage": "critic", "payload": {"unsupported_count": 0, "unsupported": [], "citations": ["doc-1"]}}
+{"ts": "2026-04-03T04:33:14.362313Z", "stage": "budget", "payload": {"tokens": 12, "continuations": 1}}
+{"ts": "2026-04-03T04:33:14.362313Z", "stage": "output", "payload": {"blocked": false, "citations": ["doc-1"], "latency_ms": 2.249}}
