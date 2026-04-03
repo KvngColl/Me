@@ -641,6 +641,9 @@
       const minimapEl = document.getElementById('minimap')
       const shell = document.getElementById('shell')
       const LAYOUT_STORAGE_KEY = 'kvngmaker-atlas-layout-v1'
+      const WORLD_WIDTH = 1200
+      const WORLD_HEIGHT = 900
+      const FIT_PADDING = 28
 
       const state = {
         nodes: graphManifest.nodes,
@@ -677,7 +680,8 @@
         dragOriginX: 0,
         dragOriginY: 0,
         startPanX: 0,
-        startPanY: 0
+        startPanY: 0,
+        resizeTicking: false
       }
 
       const lenses = ['all', 'systems', 'security', 'ai', 'runtime']
@@ -789,8 +793,8 @@
           for (const n of byId.values()) {
             n.vx *= 0.78
             n.vy *= 0.78
-            n.x = clamp(n.x + n.vx, 90, 1110)
-            n.y = clamp(n.y + n.vy, 80, 820)
+            n.x = clamp(n.x + n.vx, 90, WORLD_WIDTH - 90)
+            n.y = clamp(n.y + n.vy, 80, WORLD_HEIGHT - 80)
           }
         }
 
@@ -834,14 +838,61 @@
 
       function updateMinimap() {
         if (!scene.miniViewport) return
-        const visibleWidth = 1200 / state.view.scale
-        const visibleHeight = 900 / state.view.scale
-        const x = clamp(-state.view.panX / state.view.scale, 0, 1200 - visibleWidth)
-        const y = clamp(-state.view.panY / state.view.scale, 0, 900 - visibleHeight)
+        const visibleWidth = WORLD_WIDTH / state.view.scale
+        const visibleHeight = WORLD_HEIGHT / state.view.scale
+        const x = clamp(-state.view.panX / state.view.scale, 0, WORLD_WIDTH - visibleWidth)
+        const y = clamp(-state.view.panY / state.view.scale, 0, WORLD_HEIGHT - visibleHeight)
         scene.miniViewport.setAttribute('x', x)
         scene.miniViewport.setAttribute('y', y)
         scene.miniViewport.setAttribute('width', visibleWidth)
         scene.miniViewport.setAttribute('height', visibleHeight)
+      }
+
+      function getViewportMetrics() {
+        const rect = svg.getBoundingClientRect()
+        return {
+          width: Math.max(1, rect.width),
+          height: Math.max(1, rect.height)
+        }
+      }
+
+      function getFitScale(padding = FIT_PADDING) {
+        const metrics = getViewportMetrics()
+        const fitX = (metrics.width - padding * 2) / WORLD_WIDTH
+        const fitY = (metrics.height - padding * 2) / WORLD_HEIGHT
+        return clamp(Math.min(fitX, fitY), 0.42, 3)
+      }
+
+      function worldCenterFromView() {
+        const metrics = getViewportMetrics()
+        return {
+          x: (-state.view.panX + metrics.width / 2) / state.view.scale,
+          y: (-state.view.panY + metrics.height / 2) / state.view.scale
+        }
+      }
+
+      function panForCenter(centerX, centerY, scale) {
+        const metrics = getViewportMetrics()
+        return {
+          x: metrics.width / 2 - centerX * scale,
+          y: metrics.height / 2 - centerY * scale
+        }
+      }
+
+      function fitToViewport(animate = false) {
+        const fitScale = getFitScale()
+        const center = worldCenterFromView()
+        const constrainedCenterX = clamp(center.x, 0, WORLD_WIDTH)
+        const constrainedCenterY = clamp(center.y, 0, WORLD_HEIGHT)
+        const targetPan = panForCenter(constrainedCenterX, constrainedCenterY, fitScale)
+        if (animate) {
+          animateViewTo(fitScale, targetPan.x, targetPan.y, 220)
+          return
+        }
+        state.view.scale = fitScale
+        state.view.panX = targetPan.x
+        state.view.panY = targetPan.y
+        applyViewport()
       }
 
       function stopCameraAnimation() {
@@ -922,15 +973,16 @@
         const position = scene.positionById.get(node.id)
         if (!position) return
         const nextScale = 1.28
-        const nextPanX = 600 - position.x * nextScale
-        const nextPanY = 450 - position.y * nextScale
+        const targetPan = panForCenter(position.x, position.y, nextScale)
+        const nextPanX = targetPan.x
+        const nextPanY = targetPan.y
         animateViewTo(nextScale, nextPanX, nextPanY)
       }
 
       function clientToWorld(clientX, clientY) {
         const rect = svg.getBoundingClientRect()
-        const svgX = ((clientX - rect.left) / rect.width) * 1200
-        const svgY = ((clientY - rect.top) / rect.height) * 900
+        const svgX = ((clientX - rect.left) / rect.width) * WORLD_WIDTH
+        const svgY = ((clientY - rect.top) / rect.height) * WORLD_HEIGHT
         return {
           x: (svgX - state.view.panX) / state.view.scale,
           y: (svgY - state.view.panY) / state.view.scale
@@ -974,13 +1026,16 @@
         const url = URL.createObjectURL(blob)
         const image = new Image()
         image.onload = () => {
+          const rect = svg.getBoundingClientRect()
+          const dpr = Math.max(1, window.devicePixelRatio || 1)
           const canvas = document.createElement('canvas')
-          canvas.width = Math.max(1200, Math.round(svg.clientWidth || 1200))
-          canvas.height = Math.max(900, Math.round(svg.clientHeight || 900))
+          canvas.width = Math.max(1, Math.round(rect.width * dpr))
+          canvas.height = Math.max(1, Math.round(rect.height * dpr))
           const ctx = canvas.getContext('2d')
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
           ctx.fillStyle = '#f5f5f2'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+          ctx.fillRect(0, 0, rect.width, rect.height)
+          ctx.drawImage(image, 0, 0, rect.width, rect.height)
           canvas.toBlob(pngBlob => {
             if (pngBlob) triggerDownload('atlas-view.png', pngBlob)
             URL.revokeObjectURL(url)
@@ -1024,8 +1079,8 @@
             const point = clientToWorld(event.clientX, event.clientY)
             const dragged = scene.nodes.find(node => node.id === scene.nodeDraggingId)
             if (dragged) {
-              dragged.baseX = clamp(point.x, 90, 1110)
-              dragged.baseY = clamp(point.y, 80, 820)
+              dragged.baseX = clamp(point.x, 90, WORLD_WIDTH - 90)
+              dragged.baseY = clamp(point.y, 80, WORLD_HEIGHT - 80)
               state.manualPositions[dragged.id] = { x: dragged.baseX, y: dragged.baseY }
               saveLayout()
               updateScene((performance.now() - scene.startTime) / 1000)
@@ -1053,8 +1108,16 @@
 
         svg.addEventListener('pointerup', stopDrag)
         svg.addEventListener('pointercancel', stopDrag)
+        window.addEventListener('resize', () => {
+          if (scene.resizeTicking) return
+          scene.resizeTicking = true
+          requestAnimationFrame(() => {
+            scene.resizeTicking = false
+            fitToViewport(false)
+          })
+        })
         resetViewBtn.addEventListener('click', () => {
-          animateViewTo(1, 0, 0)
+          fitToViewport(true)
         })
         focusNodeBtn.addEventListener('click', () => focusNodeByQuery(nodeSearchEl.value))
         exportSvgBtn.addEventListener('click', exportSvg)
@@ -1399,6 +1462,7 @@
         gate.style.display = 'none'
         shell.classList.add('live')
         render()
+        fitToViewport(false)
       }
 
       btnUnlock.addEventListener('click', () => unlock().catch(() => {
