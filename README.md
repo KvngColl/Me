@@ -19,6 +19,7 @@ Stack
 rust c asm go python java linux networking reversing
 llm? yh...
 by the by
+also - check out my branches eh
 ```
 
 <img width="1340" height="720" alt="image" src="https://github.com/user-attachments/assets/4ee657be-9e73-419d-b55c-9126feb2f7cb" />
