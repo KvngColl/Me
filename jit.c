@@ -103,7 +103,7 @@ static void *alloc_exec(const Buf *src) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-/*  DEMO 1 — add(a, b)
+/*  DEMO 1
  *
  *  Windows x64: a → rcx, b → rdx, return → rax
  *
@@ -121,7 +121,7 @@ static AddFn build_add(void) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-/*  DEMO 2 — MessageBoxA("hire kvngmaker")
+/*  DEMO 2 
  *
  *  MessageBoxA(hwnd, text, caption, type) — args in rcx rdx r8 r9
  *  API pointer baked in as a literal imm64; no import table entry.
