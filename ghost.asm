@@ -19,7 +19,7 @@ FILE_ATTR_NORMAL equ 0x00000080
 OPEN_EXISTING    equ 3
 NtWriteFile_SSN  equ 0x08           ; Windows 10 1507 – 11 24H2 (x64 user-mode)
 
-MSG_LEN          equ 15             ; len("hire kvngmaker\n")
+MSG_LEN          equ 15             
 KEY_LEN          equ 32
 MARKER_LEN       equ 10             ; len("<!-- key: ")
 
