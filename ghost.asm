@@ -2,11 +2,6 @@
 ;
 ; The decode key lives in README.md as an invisible HTML comment:
 ;
-;   <!-- key: deadbeefcafebabe0102030405060708090a0b0c0d0e0f101112131415161718 -->
-;
-;   GitHub renders HTML comments as nothing.  The key is there — you just
-;   have to know to look, and know what it means.
-;
 ; Output path: direct NtWriteFile syscall.
 ;   WriteFile never touches the IAT.  API monitors see no write call.
 ;   Modify README.md → fingerprint shifts → payload decodes to garbage.
